@@ -32,7 +32,9 @@ export class AssistantController {
   @Post('prompt')
   @HttpCode(200)
   @ApiProduces('application/octet-stream')
-  @Header('Content-Type', 'application/octet-stream')
+  @Header('Content-Type', 'text/event-stream')
+  @Header('Cache-Control', 'no-cache')
+  @Header('Connection', 'keep-alive')
   @ApiResponse({
     status: 200,
     content: {
@@ -48,19 +50,23 @@ export class AssistantController {
     @Body() body: PromptDto,
     @Res({ passthrough: true }) response: Response,
   ) {
+    response.flushHeaders();
     const stream = await this.assistantService.prompt(body.question);
     for await (const chunk of stream) {
       const chunkText = chunk.text();
       response.write(chunkText);
     }
+    response.end();
   }
 
   @Post('voice-prompt')
   @HttpCode(200)
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
+  @Header('Connection', 'keep-alive')
+  @Header('Cache-Control', 'no-cache')
   @ApiProduces('application/octet-stream')
-  @Header('Content-Type', 'application/octet-stream')
+  @UseInterceptors(FileInterceptor('file'))
+  @Header('Content-Type', 'text/event-stream')
   @ApiBody({ type: SpeechToTextDto })
   @ApiResponse({
     status: 200,
@@ -77,10 +83,12 @@ export class AssistantController {
     @Res({ passthrough: true }) response: Response,
     @UploadedFile(AudioValidationPipe) file: Express.Multer.File,
   ) {
+    response.flushHeaders();
     const stream = await this.assistantService.voicePrompt(file);
     for await (const chunk of stream) {
       const chunkText = chunk.text();
       response.write(chunkText);
     }
+    response.end();
   }
 }

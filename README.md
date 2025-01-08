@@ -1,4 +1,4 @@
-# Smart Assistant Server
+# Smart Assistant
 
 ## Description
 
